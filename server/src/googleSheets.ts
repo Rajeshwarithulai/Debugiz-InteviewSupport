@@ -129,7 +129,7 @@ export async function appendInterviewRow(interview: Interview, fileBaseUrl: stri
     ? `=HYPERLINK("${attachmentUrl}", "Open attachment")`
     : "-";
   const snapshotCell = snapshotUrl
-    ? `=IMAGE("${snapshotUrl}")`
+    ? `=HYPERLINK("${snapshotUrl}", "Open attachment")`
     : "-";
 
   const appendResult = await sheets.spreadsheets.values.append({
