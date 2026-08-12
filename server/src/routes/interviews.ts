@@ -94,7 +94,8 @@ export function buildInterviewsRouter(io: SocketIOServer): Router {
         // Best-effort live sync to Google Sheets - never blocks or fails the save
         // if Sheets isn't configured or the API call has a hiccup.
         try {
-          await appendInterviewRow(record);
+          const fileBaseUrl = `${req.protocol}://${req.get("host")}`;
+          await appendInterviewRow(record, fileBaseUrl);
         } catch (sheetErr) {
           console.error("Google Sheets sync failed:", sheetErr);
         }
