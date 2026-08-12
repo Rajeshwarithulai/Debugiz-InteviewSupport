@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Interview Tracker</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__mark">IT</span>
+      <span class="topbar__name">Debugiz</span>
+    </div>
+    <nav class="topbar__nav">
+      <button class="tab active" data-view="dashboard">Dashboard</button>
+      <button class="tab" data-view="add">New Interview</button>
+    </nav>
+    <div class="topbar__status">
+      <span id="connDot" class="dot dot--off"></span>
+      <span id="connLabel">connecting…</span>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- ============ DASHBOARD VIEW ============ -->
+    <section id="view-dashboard" class="view">
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat__value" id="statTotal">0</span>
+          <span class="stat__label">Total</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value" id="statToday">0</span>
+          <span class="stat__label">Added Today</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value" id="statWithAttachment">0</span>
+          <span class="stat__label">With Attachment</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value" id="statSupporters">0</span>
+          <span class="stat__label">Active Supporters</span>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input type="search" id="searchBox" placeholder="Search candidate or email…" />
+        <select id="filterSupporting">
+          <option value="">All Supporting By</option>
+        </select>
+        <select id="filterHired">
+          <option value="">All Hired By</option>
+        </select>
+        <div class="toolbar__spacer"></div>
+        <a id="sheetBtn" class="btn btn--ghost" href="#" target="_blank" rel="noopener" style="display:none;">
+          📊 Open Google Sheet
+        </a>
+        <a id="exportBtn" class="btn btn--ghost" href="/api/interviews/export/excel">
+          ⬇ Export Excel
+        </a>
+        <button class="btn btn--primary" data-view="add">+ New Interview</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table" id="table">
+          <thead>
+            <tr>
+              <th>Candidate</th>
+              <th>Email</th>
+              <th>Supporting By</th>
+              <th>Hired By</th>
+              <th>Attachment</th>
+              <th>Snapshot</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr class="empty-row">
+              <td colspan="7">No interviews yet. Add the first one →</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ ADD INTERVIEW VIEW ============ -->
+    <section id="view-add" class="view view--hidden">
+      <form id="interviewForm" class="card form" enctype="multipart/form-data">
+        <h1 class="form__title">Add Interview</h1>
+        <p class="form__subtitle">Capture candidate details once the interview is scheduled.</p>
+
+        <div class="field">
+          <label for="candidateName">Candidate Name</label>
+          <input type="text" id="candidateName" name="candidateName" required placeholder="e.g. Raji" />
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required placeholder="candidate@example.com" />
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="supportingBy">Supporting By</label>
+            <select id="supportingBy" name="supportingBy" required>
+              <option value="" disabled selected>Select Supporting Person</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="hiredBy">Hired By</label>
+            <select id="hiredBy" name="hiredBy" required>
+              <option value="" disabled selected>Select Hiring Person</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="candidateMailAttachment">Candidate Mail Attachment</label>
+            <input type="file" id="candidateMailAttachment" name="candidateMailAttachment" />
+          </div>
+
+          <div class="field">
+            <label for="interviewSnapshot">Interview Link Direct Mail Snapshot</label>
+            <input type="file" id="interviewSnapshot" name="interviewSnapshot" accept="image/*" />
+          </div>
+        </div>
+
+        <div class="form__actions">
+          <button type="button" class="btn btn--ghost" data-view="dashboard">Cancel</button>
+          <button type="submit" class="btn btn--primary" id="submitBtn">Submit</button>
+        </div>
+
+        <p class="form__message" id="formMessage"></p>
+      </form>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/app.js" type="module"></script>
+</body>
+</html>
