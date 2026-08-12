@@ -6,6 +6,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { buildInterviewsRouter } from "./routes/interviews";
 
 const app = express();
+app.set("trust proxy", true);
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: { origin: "*" }
