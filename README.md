@@ -117,6 +117,23 @@ Once those three vars are set and you redeploy, the dashboard will show an **"Op
 button, and every new interview submission appends a row there in real time — alongside the existing
 in-app live table and the Excel export.
 
+### Images and attachments inside the sheet
+
+Each row's **Interview Link Direct Mail Snapshot** cell uses Google Sheets' `=IMAGE()` formula, so the
+actual screenshot renders as a thumbnail directly in the cell. The **Candidate Mail Attachment** cell
+uses `=HYPERLINK()`, so clicking it opens the file in a new tab.
+
+For these to work, Google's servers need to be able to fetch the file from your app over the public
+internet — the app builds the link from the request that hit it (e.g.
+`https://your-app.onrender.com/api/interviews/files/xyz.png`), so this works automatically once your
+app is deployed and reachable at a public URL. It won't work while running purely on `localhost`.
+
+**Important:** uploaded files live on the server's local disk (`server/uploads/`). Most hosts, including
+Render's free tier, wipe the filesystem on every redeploy — which means old thumbnails/links in the
+sheet will break (and old attachments become unreachable) after your next deploy. To keep them working
+long-term, attach a **persistent disk** mounted at `server/uploads` (Render: Dashboard → your service →
+**Disks** → add one, mount path `/opt/render/project/src/server/uploads`, a few hundred MB is plenty).
+
 ## Deploying
 
 This is a single Node.js service that also serves the static frontend, so any Node host works
