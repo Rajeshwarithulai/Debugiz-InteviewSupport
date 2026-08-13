@@ -1,15 +1,17 @@
 "use strict";
 // Interview Tracker - frontend application logic
 // Compiled with tsc (see tsconfig.json) to /public/js/app.js
+//
+// NOTE: only the "Add Interview" screen is linked in the UI right now (per current
+// requirements). The dashboard view, its rendering functions, and its DOM elements
+// are still fully implemented below and simply left unlinked - flip a nav link back
+// on and call showView("dashboard") to re-enable it later, no rebuild needed.
 const socket = io();
 let allInterviews = [];
 // ---------- View switching ----------
 function showView(name) {
     document.querySelectorAll(".view").forEach((el) => {
         el.classList.toggle("view--hidden", el.id !== `view-${name}`);
-    });
-    document.querySelectorAll(".tab").forEach((el) => {
-        el.classList.toggle("active", el.dataset.view === name);
     });
 }
 document.querySelectorAll("[data-view]").forEach((el) => {
@@ -38,7 +40,6 @@ socket.on("interview:created", (record) => {
     renderTable(record.id);
     renderStats();
     populateFilterOptions();
-    showToast(`${record.candidateName} added by another user`);
 });
 // ---------- Data loading ----------
 async function loadInterviews() {
@@ -70,6 +71,8 @@ async function loadPeople() {
 function populateFilterOptions() {
     const supportingFilter = document.getElementById("filterSupporting");
     const hiredFilter = document.getElementById("filterHired");
+    if (!supportingFilter || !hiredFilter)
+        return;
     const existingSupportingVal = supportingFilter.value;
     const existingHiredVal = hiredFilter.value;
     const supportingSet = Array.from(new Set(allInterviews.map((i) => i.supportingBy))).sort();
@@ -91,7 +94,7 @@ function populateFilterOptions() {
     });
     hiredFilter.value = existingHiredVal;
 }
-// ---------- Rendering ----------
+// ---------- Rendering (dashboard) ----------
 function fileLinkHtml(filename, label) {
     if (!filename)
         return `<span class="file-none">— none —</span>`;
@@ -103,9 +106,14 @@ function formatDate(iso) {
         " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 function getFilteredInterviews() {
-    const search = document.getElementById("searchBox").value.trim().toLowerCase();
-    const supportingFilter = document.getElementById("filterSupporting").value;
-    const hiredFilter = document.getElementById("filterHired").value;
+    const searchEl = document.getElementById("searchBox");
+    const supportingEl = document.getElementById("filterSupporting");
+    const hiredEl = document.getElementById("filterHired");
+    if (!searchEl || !supportingEl || !hiredEl)
+        return allInterviews;
+    const search = searchEl.value.trim().toLowerCase();
+    const supportingFilter = supportingEl.value;
+    const hiredFilter = hiredEl.value;
     return allInterviews.filter((iv) => {
         const matchesSearch = !search ||
             iv.candidateName.toLowerCase().includes(search) ||
@@ -117,6 +125,8 @@ function getFilteredInterviews() {
 }
 function renderTable(highlightId) {
     const tbody = document.getElementById("tableBody");
+    if (!tbody)
+        return;
     const filtered = getFilteredInterviews();
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No interviews match your filters.</td></tr>`;
@@ -142,39 +152,76 @@ function renderStats() {
     const addedToday = allInterviews.filter((iv) => new Date(iv.createdAt).toDateString() === today).length;
     const withAttachment = allInterviews.filter((iv) => iv.candidateMailAttachment).length;
     const supporters = new Set(allInterviews.map((iv) => iv.supportingBy)).size;
-    document.getElementById("statTotal").textContent = String(total);
-    document.getElementById("statToday").textContent = String(addedToday);
-    document.getElementById("statWithAttachment").textContent = String(withAttachment);
-    document.getElementById("statSupporters").textContent = String(supporters);
+    const totalEl = document.getElementById("statTotal");
+    const todayEl = document.getElementById("statToday");
+    const attachEl = document.getElementById("statWithAttachment");
+    const supportersEl = document.getElementById("statSupporters");
+    if (!totalEl || !todayEl || !attachEl || !supportersEl)
+        return;
+    totalEl.textContent = String(total);
+    todayEl.textContent = String(addedToday);
+    attachEl.textContent = String(withAttachment);
+    supportersEl.textContent = String(supporters);
 }
 function escapeHtml(str) {
     const div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
 }
-// ---------- Filters ----------
 ["searchBox", "filterSupporting", "filterHired"].forEach((id) => {
     document.getElementById(id)?.addEventListener("input", () => renderTable());
 });
+// ---------- Google Sheet link (dashboard only, unlinked for now) ----------
+async function loadConfig() {
+    try {
+        const res = await fetch("/api/interviews/config");
+        const config = await res.json();
+        const sheetBtn = document.getElementById("sheetBtn");
+        if (sheetBtn && config.googleSheetsConnected && config.googleSheetUrl) {
+            sheetBtn.href = config.googleSheetUrl;
+            sheetBtn.style.display = "inline-flex";
+        }
+    }
+    catch {
+        // Config endpoint failing shouldn't break the rest of the app.
+    }
+}
 // ---------- Toast ----------
 let toastTimer;
-function showToast(message) {
+function showToast(message, variant = "default") {
     const toast = document.getElementById("toast");
     toast.textContent = message;
     toast.classList.add("show");
+    toast.classList.toggle("toast--error", variant === "error");
     window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => toast.classList.remove("show"), 3200);
+}
+document.querySelectorAll('.file-drop input[type="file"]').forEach((input) => {
+    input.addEventListener("change", () => {
+        const label = input.closest(".file-drop")?.querySelector(".file-drop__text");
+        if (!label)
+            return;
+        label.textContent = input.files && input.files[0] ? input.files[0].name : (label.dataset.default || "Choose a file");
+    });
+});
+function resetFileLabels() {
+    document.querySelectorAll(".file-drop__text").forEach((label) => {
+        label.textContent = label.dataset.default || "Choose a file";
+    });
 }
 // ---------- Form submission ----------
 const form = document.getElementById("interviewForm");
 const submitBtn = document.getElementById("submitBtn");
 const formMessage = document.getElementById("formMessage");
+const confirmState = document.getElementById("confirmState");
+const confirmName = document.getElementById("confirmName");
+const logAnotherBtn = document.getElementById("logAnotherBtn");
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
     formMessage.textContent = "";
     formMessage.className = "form__message";
     submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting…";
+    submitBtn.textContent = "Saving…";
     try {
         const formData = new FormData(form);
         const res = await fetch("/api/interviews", {
@@ -186,43 +233,47 @@ form.addEventListener("submit", async (e) => {
             throw new Error(err.error || "Submission failed.");
         }
         const data = await res.json();
-        // The submitter's own view updates immediately; other clients get it via socket.
         if (!allInterviews.find((iv) => iv.id === data.interview.id)) {
             allInterviews.unshift(data.interview);
         }
-        formMessage.textContent = "Interview saved and Excel export updated.";
-        formMessage.classList.add("success");
-        form.reset();
         renderStats();
         populateFilterOptions();
-        showView("dashboard");
-        renderTable(data.interview.id);
+        // Swap to the postmark confirmation state
+        confirmName.textContent = data.interview.candidateName;
+        form.classList.add("view--hidden");
+        confirmState.classList.remove("view--hidden");
+        // restart the stamp animation each time
+        const stamp = confirmState.querySelector(".stamp");
+        stamp.style.animation = "none";
+        void stamp.offsetWidth;
+        stamp.style.animation = "";
     }
     catch (err) {
-        formMessage.textContent = err.message || "Something went wrong.";
+        const message = err.message || "Something went wrong. Please try again.";
+        formMessage.textContent = message;
         formMessage.classList.add("error");
+        showToast(message, "error");
     }
     finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = "Submit";
+        submitBtn.innerHTML = "<span>Save interview</span>";
     }
 });
-// ---------- Google Sheet link ----------
-async function loadConfig() {
-    try {
-        const res = await fetch("/api/interviews/config");
-        const config = await res.json();
-        const sheetBtn = document.getElementById("sheetBtn");
-        if (config.googleSheetsConnected && config.googleSheetUrl) {
-            sheetBtn.href = config.googleSheetUrl;
-            sheetBtn.style.display = "inline-flex";
-        }
-    }
-    catch {
-        // Config endpoint failing shouldn't break the rest of the app.
-    }
-}
+const resetBtn = document.getElementById("resetBtn");
+resetBtn.addEventListener("click", () => {
+    // native reset runs first via type="reset"; clear our custom file labels right after
+    setTimeout(resetFileLabels, 0);
+});
+logAnotherBtn.addEventListener("click", () => {
+    form.reset();
+    resetFileLabels();
+    formMessage.textContent = "";
+    formMessage.className = "form__message";
+    confirmState.classList.add("view--hidden");
+    form.classList.remove("view--hidden");
+});
 // ---------- Init ----------
+showView("add");
 loadPeople();
 loadInterviews();
 loadConfig();
