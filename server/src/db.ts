@@ -12,7 +12,7 @@ const DEFAULTS: DbSchema = {
 "Pravin",
 "Santhosh",
 "Kabin",
-"Dhinakaran"
+"Dhinakaran",
 "siva",
 "viswa",
 "abi",
@@ -21,7 +21,7 @@ const DEFAULTS: DbSchema = {
 "pravin",
 "santhosh",
 "Kabin",
-"Dhinakaran"
+"Dhinakaran",
 "siva",
 "viswa",
 "abi",
