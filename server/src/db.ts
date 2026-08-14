@@ -8,16 +8,20 @@ const DB_FILE = path.join(DATA_DIR, "db.json");
 const DEFAULTS: DbSchema = {
   interviews: [],
   people: {
-    supporting: ["mam","Raji",
+    supporting: ["Mam","Raji",
 "Pravin",
 "Santhosh",
+"Kabin",
+"Dhinakaran"
 "siva",
 "viswa",
 "abi",
 "shiva kumar"],
-    hiring: ["Raji",
+    hiring: ["Mam","Raji",
 "pravin",
 "santhosh",
+"Kabin",
+"Dhinakaran"
 "siva",
 "viswa",
 "abi",
